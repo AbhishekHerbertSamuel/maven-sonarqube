@@ -1,40 +1,55 @@
 pipeline {
     agent any
-    tools {
-        maven 'Maven_3.9.9' // Ensure this matches the Jenkins Maven tool configuration
-    }
+
     environment {
-        SONAR_TOKEN = credentials('sonarcloud-token') // Ensure this matches your Jenkins credential ID
+        MAVEN_HOME = tool 'Maven_3.9.9' // Ensure Maven is configured in Jenkins
+        PATH = "${MAVEN_HOME}/bin:${env.PATH}"
+        SONAR_TOKEN = credentials('sonarcloud-token') // Replace with your Jenkins credentials ID
     }
+
     stages {
         stage('Clean Workspace') {
             steps {
                 cleanWs()
             }
         }
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/AbhishekHerbertSamuel/maven-sonarqube.git'
             }
         }
-        stage('Maven Build and Test') {
+
+        stage('Install Dependencies') {
             steps {
-                sh 'mvn clean test'
+                sh 'mvn clean install'
             }
         }
-        stage('SonarCloud Analysis') {
+
+        stage('Run Tests') {
             steps {
-                withSonarQubeEnv('SonarCloud') {
-                    sh """
+                sh 'mvn test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            environment {
+                // Inject SonarQube environment variables
+                SONAR_HOST_URL = 'https://sonarcloud.io'
+            }
+            steps {
+                withSonarQubeEnv('SonarCloud') { // Configure SonarQube in Jenkins
+                    sh '''
                     mvn sonar:sonar \
                         -Dsonar.organization=abhishekherbertsamuel \
                         -Dsonar.projectKey=maven-sonarqube \
-                        -Dsonar.login=${SONAR_TOKEN}
-                    """
+                        -Dsonar.login=$SONAR_TOKEN
+                    '''
                 }
             }
         }
     }
+
     post {
         always {
             echo 'Pipeline completed.'
@@ -47,5 +62,6 @@ pipeline {
         }
     }
 }
+
 
 
