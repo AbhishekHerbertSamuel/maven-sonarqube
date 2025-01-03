@@ -1,32 +1,51 @@
 pipeline {
     agent any
-
     tools {
-        maven 'Maven_3.9.9' // Ensure Maven is configured in Jenkins
+        maven 'Maven_3.9.9' // Ensure this matches the Jenkins Maven tool configuration
     }
-
     environment {
-        SONAR_TOKEN = credentials('sonarcloud-token') // Add your SonarCloud token in Jenkins
+        SONAR_TOKEN = credentials('sonarcloud-token') // Ensure this matches your Jenkins credential ID
     }
-
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/AbhishekHerbertSamuel/maven-sonarqube.git'
             }
         }
-        stage('Build') {
+        stage('Maven Build and Test') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn clean test'
             }
         }
-        stage('SonarQube Analysis') {
+        stage('SonarCloud Analysis') {
             steps {
-                withSonarQubeEnv('SonarCloud') { // Ensure SonarCloud is configured in Jenkins
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=maven-sonarqube -Dsonar.organization=abhishekherbertsamuel'
+                withSonarQubeEnv('SonarCloud') {
+                    sh """
+                    mvn sonar:sonar \
+                        -Dsonar.organization=abhishekherbertsamuel \
+                        -Dsonar.projectKey=maven-sonarqube \
+                        -Dsonar.login=${SONAR_TOKEN}
+                    """
                 }
             }
         }
     }
+    post {
+        always {
+            echo 'Pipeline completed.'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
+
 
