@@ -3,9 +3,10 @@ package com.example.automation;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.junit.jupiter.api.Test;
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,11 +16,11 @@ public class LoginAutomationTest {
     public void testLogin() {
         // Set up WebDriver using WebDriverManager
         WebDriverManager.chromedriver().setup();
-
         WebDriver driver = new ChromeDriver();
+
         try {
-            // Navigate to the local login page
-            driver.get("file:///" + System.getProperty("user.dir") + "/login.html");
+            // Navigate to the login page
+            driver.get("file://" + System.getProperty("user.dir") + "/login.html");
 
             // Locate the username and password fields
             WebElement usernameField = driver.findElement(By.id("username"));
@@ -31,14 +32,22 @@ public class LoginAutomationTest {
             passwordField.sendKeys("testPassword");
             loginButton.click();
 
-            // Validate successful login
+            // Handle the alert
+            Alert alert = driver.switchTo().alert();
+            System.out.println("Alert message: " + alert.getText());
+            alert.accept(); // Dismiss the alert
+
+            // Validate the page title after dismissing the alert
             String expectedTitle = "Dashboard";
             String actualTitle = driver.getTitle();
             assertEquals(expectedTitle, actualTitle);
+
         } finally {
             // Close the browser
             driver.quit();
         }
     }
 }
+
+
 
